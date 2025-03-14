@@ -1,0 +1,51 @@
+# Safe releases for proftpd.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "proftpd"
+prefix = "proftpd__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "v1.3.7c"
+harness-patch = "harness-e2d1c480f2.patch"
+[[commit-sequences.commits]]
+ref = "v1.3.8b"
+harness-patch = "harness-e2d1c480f2.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "v1.3.8b"
+harness-patch = "harness-e2d1c480f2.patch"
+[[commit-sequences.commits]]
+ref = "v1.3.8c"
+name = "v1.3.8c-ubuntu"
+harness-patch = "harness-e2d1c480f2.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "v1.3.7a"
+harness-patch = "harness-e2d1c480f2.patch"
+[[commit-sequences.commits]]
+ref = "v1.3.8"
+harness-patch = "harness-e2d1c480f2.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "v1.3.8"
+harness-patch = "harness-e2d1c480f2.patch"
+[[commit-sequences.commits]]
+ref = "v1.3.8c"
+name = "v1.3.8c-debian"
+harness-patch = "harness-e2d1c480f2.patch"

@@ -1,0 +1,52 @@
+# Safe releases for libsndfile.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "libsndfile"
+prefix = "libsndfile__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "1.0.31"
+harness-patch = "harness-1998691e56.patch"
+[[commit-sequences.commits]]
+ref = "1.2.2"
+name = "1.2.2-ubuntu1"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "1.2.2"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "1.2.2"
+name = "1.2.2-ubuntu2"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "1.0.31"
+harness-patch = "harness-1998691e56.patch"
+[[commit-sequences.commits]]
+ref = "1.2.0"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "1.2.0"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "1.2.2"
+name = "1.2.2-debian"
+harness-patch = "harness.patch"

@@ -1,0 +1,53 @@
+# Safe releases for vsftpd.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "vsftpd"
+prefix = "vsftpd__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "3.0.5"
+harness-patch = "harness-3.0.3.patch"
+[[commit-sequences.commits]]
+ref = "3.0.5"
+name = "3.0.5-ubuntu1"
+harness-patch = "harness-3.0.3.patch"
+
+# NOTE: this release pair is the exact same as `3.0.5-ubuntu1`.
+# [[commit-sequences]]
+# distro = "Ubuntu"
+# releases = "noble (24.04LTS), plucky (25.04)"
+# [[commit-sequences.commits]]
+# ref = "3.0.5"
+# harness-patch = "harness-3.0.3.patch"
+# [[commit-sequences.commits]]
+# ref = "3.0.5"
+# name = "3.0.5-ubuntu2"
+# harness-patch = "harness-3.0.3.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "3.0.3"
+harness-patch = "harness-3.0.3.patch"
+[[commit-sequences.commits]]
+ref = "3.0.3"
+harness-patch = "harness-3.0.3.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "3.0.3"
+harness-patch = "harness-3.0.3.patch"
+[[commit-sequences.commits]]
+ref = "3.0.5"
+name = "3.0.5-debian"
+harness-patch = "harness-3.0.3.patch"

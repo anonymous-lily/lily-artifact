@@ -1,0 +1,205 @@
+diff --git a/include/harness.h b/include/harness.h
+new file mode 100644
+index 00000000..d87ad9e1
+--- /dev/null
++++ b/include/harness.h
+@@ -0,0 +1,109 @@
++#ifndef __PROFTPD_FUZZING_HARNESS__
++#define __PROFTPD_FUZZING_HARNESS__
++
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++
++
++// Stub out all network-related functions.
++#define listen(sockfd, backlog) ( \
++    listen(-1, backlog), \
++    errno = 0, \
++    0 \
++)
++
++#define setsockopt(sockfd, level, optname, optval, optlen) ( \
++    setsockopt(-1, level, optname, optval, optlen), \
++    errno = 0, \
++    0 \
++)
++
++#define socket(domain, type, protocol) ( \
++    socket(-1, type, protocol), \
++    errno = 0, \
++    0 \
++)
++
++#define accept(sockfd, addr, addrlen) ( \
++    accept(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define bind(sockfd, addr, addrlen) ( \
++    bind(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define getpeername(sockfd, addr, addrlen) ( \
++    getpeername(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define getsockname(sockfd, addr, addrlen) ( \
++    getsockname(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define common_sock_stub(sockfd, addr, addrlen) \
++    ( \
++        ((struct sockaddr*)addr) != NULL ? \
++        ( \
++            ((struct sockaddr_in*)addr)->sin_family = AF_INET, \
++            ((struct sockaddr_in*)addr)->sin_addr.s_addr = inet_addr("127.0.0.1"), \
++            ((struct sockaddr_in*)addr)->sin_port = htons(8000), \
++            0 \
++        ) : 0, \
++        0 \
++    )
++
++// Stub out various other functions.
++#define alarm(seconds) ( \
++    alarm(0), \
++    0 \
++)
++
++#define close(fd) \
++    ( \
++        close(-1), \
++        errno = 0, \
++        0 \
++    )
++
++#define dup2(old, new) \
++    ((new) <= 2 ? ( \
++        dup2(old, new + 10), \
++        errno = 0, \
++        0 \
++    ) : dup2(old, new))
++
++#define fcntl(fd, op, ...) ( \
++    fcntl(-1, op), \
++    errno = 0, \
++    0 \
++)
++
++#define fstat(fd, statbuf) \
++    (fd) <= 2 ? ( \
++        fstat(-1, statbuf), \
++        errno = 0, \
++        (statbuf)->st_mode |= S_IFSOCK, \
++        0 \
++    ) : fstat(fd, statbuf)
++
++#define fork() 0
++
++#define nanosleep(duration, rem) ( \
++    nanosleep(0, rem), \
++    0 \
++)
++
++#define write(fd, buf, count) \
++    fd >= 0 ? write(1, buf, count) : write(fd, buf, count)
++
++
++#endif  // __PROFTPD_FUZZING_HARNESS__
+diff --git a/src/fsio.c b/src/fsio.c
+index 40ef4663..07cb70c9 100644
+--- a/src/fsio.c
++++ b/src/fsio.c
+@@ -29,6 +29,7 @@
+  */
+ 
+ #include "conf.h"
++#include "harness.h"
+ 
+ #ifdef HAVE_REGEX_H
+ # include <regex.h>
+diff --git a/src/inet.c b/src/inet.c
+index b7272454..1e5fb344 100644
+--- a/src/inet.c
++++ b/src/inet.c
+@@ -30,6 +30,7 @@
+ 
+ #include "conf.h"
+ #include "privs.h"
++#include "harness.h"
+ 
+ extern server_rec *main_server;
+ 
+@@ -377,7 +378,7 @@ static conn_t *init_conn(pool *p, xaset_t *servers, int fd,
+         pr_signals_unblock();
+       }
+ 
+-      pr_timer_sleep(1);
++      //pr_timer_sleep(1);
+ 
+       if (port != INPORT_ANY &&
+           port < 1024) {
+@@ -494,7 +495,7 @@ conn_t *pr_inet_create_conn_portrange(pool *p, xaset_t *servers,
+ 
+       if (attempt == 3) {
+ 	/* Obtain a random index into the port array range. */
+-	random_index = (int) ((1.0 * i * rand()) / (RAND_MAX+1.0));
++	random_index = 0; //(int) ((1.0 * i * rand()) / (RAND_MAX+1.0));
+ 
+ 	/* Copy the port at that index into the array from which port
+ 	 * numbers will be selected when calling init_conn().
+diff --git a/src/main.c b/src/main.c
+index eff78eea..79481e14 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -62,6 +62,8 @@
+ #endif
+ 
+ #include "privs.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
++#include "harness.h"
+ 
+ int (*cmd_auth_chk)(cmd_rec *);
+ void (*cmd_handler)(server_rec *, conn_t *);
+@@ -897,6 +899,12 @@ static void send_session_banner(server_rec *server) {
+ 
+ static void cmd_loop(server_rec *server, conn_t *c) {
+ 
++#ifdef __AFL_HAVE_MANUAL_CONTROL
++  __AFL_INIT();
++#endif
++
++  __ROSA_TRACE_START();
++
+   while (TRUE) {
+     int res = 0; 
+     cmd_rec *cmd = NULL;
+@@ -1700,7 +1708,7 @@ void pr_signals_handle(void) {
+     if (recvd_signal_flags & RECEIVED_SIG_ALRM) {
+       recvd_signal_flags &= ~RECEIVED_SIG_ALRM;
+       pr_trace_msg("signal", 9, "handling SIGALRM (signal %d)", SIGALRM);
+-      handle_alarm();
++      //handle_alarm();
+     }
+ 
+     if (recvd_signal_flags & RECEIVED_SIG_CHLD) {
+diff --git a/src/netio.c b/src/netio.c
+index e1450ebf..68c6a0c8 100644
+--- a/src/netio.c
++++ b/src/netio.c
+@@ -190,7 +190,7 @@ static int core_netio_postopen_cb(pr_netio_stream_t *nstrm) {
+ 
+ static int core_netio_read_cb(pr_netio_stream_t *nstrm, char *buf,
+     size_t buflen) {
+-  return read(nstrm->strm_fd, buf, buflen);
++  return read(0, buf, buflen);
+ }
+ 
+ static pr_netio_stream_t *core_netio_reopen_cb(pr_netio_stream_t *nstrm, int fd,

@@ -1,0 +1,130 @@
+# Safe commit sequences for lua.
+# These commit sequences are generated with `get-representative-commits.py`, and do *not* only
+# include commits affecting C source/header files.
+#
+# Oldest commit: dbdc74dc5502c2e05e1c1e2ac894943f418c8431
+# Source: MAGMA (https://github.com/HexHive/magma/blob/v1.2/targets/lua/fetch.sh#L9)
+# Tolerance: 1
+
+
+kind = "commit"
+category = "safe-commits"
+target = "lua"
+prefix = "lua__safe-commit"
+
+[[commit-sequences]]
+size = "small"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "75620b45ae"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "fd0e1f530d"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "007b8c7a01"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "small"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "7538f3886d"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "1c40ff9faa"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "f81d0bbd4f"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "small"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "10e931da82"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "3cdd49c94a"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "2d8d5c74b5"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "9a91fe1640"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "8a4419b119"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "ee6a4cd1ec"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "9fa63a6268"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "86a8e74824"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "88a50ffa71"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "ab66652b32"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "d9e0f64a5d"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "c931d86e98"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "853311e5b1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "0de8191152"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "2491b87c10"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "b5b1995f29"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "808976bb59"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "4398e488e6"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "d862da6d04"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "8eb0abc9db"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "17e0c29d9b"
+harness-patch = "harness.patch"

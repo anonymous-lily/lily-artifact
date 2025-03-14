@@ -1,0 +1,541 @@
+diff --git a/main/streams/cast.c b/main/streams/cast.c
+index 262ec5e38f1..9fe8bd5b023 100644
+--- a/main/streams/cast.c
++++ b/main/streams/cast.c
+@@ -102,8 +102,7 @@ static ssize_t stream_cookie_writer(void *cookie, const char *buffer, size_t siz
+ 	return php_stream_write(((php_stream *)cookie), (char *)buffer, size);
+ }
+ 
+-# ifdef COOKIE_SEEKER_USES_OFF64_T
+-static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
++static int stream_cookie_seeker(void *cookie, off_t *position, int whence)
+ {
+ 
+ 	*position = php_stream_seek((php_stream *)cookie, (zend_off_t)*position, whence);
+@@ -113,13 +112,6 @@ static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
+ 	}
+ 	return 0;
+ }
+-# else
+-static int stream_cookie_seeker(void *cookie, zend_off_t position, int whence)
+-{
+-
+-	return php_stream_seek((php_stream *)cookie, position, whence);
+-}
+-# endif
+ 
+ static int stream_cookie_closer(void *cookie)
+ {
+diff --git a/sapi/fuzzer/Makefile.frag b/sapi/fuzzer/Makefile.frag
+new file mode 100644
+index 00000000000..50feac3a9ab
+--- /dev/null
++++ b/sapi/fuzzer/Makefile.frag
+@@ -0,0 +1,6 @@
++fuzzer: $(SAPI_FUZZER_PATH)/php-fuzz-unserialize
++
++FUZZER_BUILD = $(LIBTOOL) --mode=link $(FUZZING_CC) -export-dynamic $(CFLAGS_CLEAN) $(EXTRA_CFLAGS) $(EXTRA_LDFLAGS_PROGRAM) $(LDFLAGS) $(PHP_RPATHS) $(PHP_GLOBAL_OBJS) $(PHP_BINARY_OBJS) $(EXTRA_LIBS) $(ZEND_EXTRA_LIBS) $(FUZZING_LIB) -rpath /ORIGIN/lib
++
++$(SAPI_FUZZER_PATH)/php-fuzz-unserialize: $(PHP_GLOBAL_OBJS) $(PHP_SAPI_OBJS) $(PHP_FUZZER_UNSERIALIZE_OBJS)
++	$(FUZZER_BUILD) $(PHP_FUZZER_UNSERIALIZE_OBJS) -o $@
+diff --git a/sapi/fuzzer/config.m4 b/sapi/fuzzer/config.m4
+new file mode 100644
+index 00000000000..92327fc1d4b
+--- /dev/null
++++ b/sapi/fuzzer/config.m4
+@@ -0,0 +1,93 @@
++AC_MSG_CHECKING(for clang fuzzer SAPI)
++
++PHP_ARG_ENABLE([fuzzer],,
++  [AS_HELP_STRING([--enable-fuzzer],
++    [Build PHP as clang fuzzing test module (for developers)])],
++  [no],
++  [no])
++
++PHP_ARG_ENABLE([fuzzer-msan],,
++  [AS_HELP_STRING([--enable-fuzzer-msan],
++    [Enable msan instead of asan/ubsan when fuzzing])],
++  [no],
++  [no])
++
++dnl For newer clang versions see https://llvm.org/docs/LibFuzzer.html#fuzzer-usage
++dnl for relevant flags.
++
++dnl Macro to define fuzzing target
++dnl PHP_FUZZER_TARGET(name, target-var)
++dnl
++AC_DEFUN([PHP_FUZZER_TARGET], [
++  PHP_FUZZER_BINARIES="$PHP_FUZZER_BINARIES $SAPI_FUZZER_PATH/php-fuzz-$1"
++  PHP_SUBST($2)
++  PHP_ADD_SOURCES_X([sapi/fuzzer],[fuzzer-$1.c],[],$2)
++  $2="[$]$2 $FUZZER_COMMON_OBJS"
++])
++
++if test "$PHP_FUZZER" != "no"; then
++  AC_MSG_RESULT([yes])
++  dnl Don't use PHP_REQUIRE_CXX() to avoid unnecessarily pulling in -lstdc++
++  AC_PROG_CXX
++  AC_PROG_CXXCPP
++  PHP_ADD_MAKEFILE_FRAGMENT($abs_srcdir/sapi/fuzzer/Makefile.frag)
++  SAPI_FUZZER_PATH=sapi/fuzzer
++  PHP_SUBST(SAPI_FUZZER_PATH)
++  if test -z "$LIB_FUZZING_ENGINE"; then
++    FUZZING_LIB="-fsanitize=fuzzer"
++    FUZZING_CC="$CC"
++    AX_CHECK_COMPILE_FLAG([-fsanitize=fuzzer-no-link], [
++      CFLAGS="$CFLAGS -fsanitize=fuzzer-no-link"
++      CXXFLAGS="$CXXFLAGS -fsanitize=fuzzer-no-link"
++
++      if test "$PHP_FUZZER_MSAN" = "yes"; then
++        CFLAGS="$CFLAGS -fsanitize=memory -fsanitize-memory-track-origins"
++        CXXFLAGS="$CXXFLAGS -fsanitize=memory -fsanitize-memory-track-origins"
++      else
++        CFLAGS="$CFLAGS -fsanitize=address"
++        CXXFLAGS="$CXXFLAGS -fsanitize=address"
++
++        dnl Don't include -fundefined in CXXFLAGS, because that would also require linking
++        dnl with a C++ compiler.
++        dnl Disable object-size sanitizer, because it is incompatible with our zend_function
++        dnl union, and this can't be easily fixed.
++        dnl We need to specify -fno-sanitize-recover=undefined here, otherwise ubsan warnings
++        dnl will not be considered failures by the fuzzer.
++        CFLAGS="$CFLAGS -fsanitize=undefined -fno-sanitize=object-size -fno-sanitize-recover=undefined"
++      fi
++    ],[
++      AC_MSG_ERROR(Compiler doesn't support -fsanitize=fuzzer-no-link)
++    ])
++  else
++    FUZZING_LIB="$LIB_FUZZING_ENGINE"
++    FUZZING_CC="$CXX -stdlib=libc++"
++  fi
++  PHP_SUBST(FUZZING_LIB)
++  PHP_SUBST(FUZZING_CC)
++
++  dnl PHP_SELECT_SAPI(fuzzer-parser, program, $FUZZER_SOURCES, , '$(SAPI_FUZZER_PATH)')
++
++  PHP_ADD_BUILD_DIR([sapi/fuzzer])
++  PHP_FUZZER_BINARIES=""
++  PHP_BINARIES="$PHP_BINARIES fuzzer"
++  PHP_INSTALLED_SAPIS="$PHP_INSTALLED_SAPIS fuzzer"
++
++  PHP_ADD_SOURCES_X([sapi/fuzzer], [fuzzer-sapi.c], [], FUZZER_COMMON_OBJS)
++
++  PHP_FUZZER_TARGET([parser], PHP_FUZZER_PARSER_OBJS)
++  PHP_FUZZER_TARGET([execute], PHP_FUZZER_EXECUTE_OBJS)
++  PHP_FUZZER_TARGET([unserialize], PHP_FUZZER_UNSERIALIZE_OBJS)
++  PHP_FUZZER_TARGET([unserializehash], PHP_FUZZER_UNSERIALIZEHASH_OBJS)
++  PHP_FUZZER_TARGET([json], PHP_FUZZER_JSON_OBJS)
++
++  if test -n "$enable_exif" && test "$enable_exif" != "no"; then
++    PHP_FUZZER_TARGET([exif], PHP_FUZZER_EXIF_OBJS)
++  fi
++  if test -n "$enable_mbstring" && test "$enable_mbstring" != "no"; then
++    PHP_FUZZER_TARGET([mbstring], PHP_FUZZER_MBSTRING_OBJS)
++  fi
++
++  PHP_SUBST(PHP_FUZZER_BINARIES)
++fi
++
++AC_MSG_RESULT($PHP_FUZZER)
+diff --git a/sapi/fuzzer/fuzzer-sapi.c b/sapi/fuzzer/fuzzer-sapi.c
+new file mode 100644
+index 00000000000..95c2b1ce956
+--- /dev/null
++++ b/sapi/fuzzer/fuzzer-sapi.c
+@@ -0,0 +1,265 @@
++/*
++   +----------------------------------------------------------------------+
++   | Copyright (c) The PHP Group                                          |
++   +----------------------------------------------------------------------+
++   | This source file is subject to version 3.01 of the PHP license,      |
++   | that is bundled with this package in the file LICENSE, and is        |
++   | available through the world-wide-web at the following url:           |
++   | https://www.php.net/license/3_01.txt                                 |
++   | If you did not receive a copy of the PHP license and are unable to   |
++   | obtain it through the world-wide-web, please send a note to          |
++   | license@php.net so we can mail you a copy immediately.               |
++   +----------------------------------------------------------------------+
++   | Authors: Johannes Schlüter <johanes@php.net>                         |
++   |          Stanislav Malyshev <stas@php.net>                           |
++   +----------------------------------------------------------------------+
++ */
++
++#include <main/php.h>
++#include <main/php_main.h>
++#include <main/SAPI.h>
++#include <ext/standard/info.h>
++#include <ext/standard/php_var.h>
++#include <main/php_variables.h>
++#include <zend_exceptions.h>
++
++#ifdef __SANITIZE_ADDRESS__
++# include "sanitizer/lsan_interface.h"
++#endif
++
++#include "fuzzer.h"
++#include "fuzzer-sapi.h"
++
++const char HARDCODED_INI[] =
++	"html_errors=0\n"
++	"implicit_flush=1\n"
++	"output_buffering=0\n"
++	"error_reporting=0\n"
++	/* Let the timeout be enforced by libfuzzer, not PHP. */
++	"max_execution_time=0\n"
++	/* Reduce oniguruma limits to speed up fuzzing */
++	"mbstring.regex_stack_limit=10000\n"
++	"mbstring.regex_retry_limit=10000\n"
++	/* For the "execute" fuzzer disable some functions that are likely to have
++	 * undesirable consequences (shell execution, file system writes). */
++	"allow_url_include=0\n"
++	"allow_url_fopen=0\n"
++	"open_basedir=/tmp\n"
++	"disable_functions=dl,mail,mb_send_mail"
++	",shell_exec,exec,system,proc_open,popen,passthru,pcntl_exec"
++	",chgrp,chmod,chown,copy,file_put_contents,lchgrp,lchown,link,mkdir"
++	",move_uploaded_file,rename,rmdir,symlink,tempname,touch,unlink,fopen"
++	/* Networking code likes to wait and wait. */
++	",fsockopen,pfsockopen"
++	",stream_socket_pair,stream_socket_client,stream_socket_server"
++	/* crypt() can be very slow. */
++	",crypt"
++	/* openlog() has a known memory-management issue. */
++	",openlog"
++	/* Can cause long loops that bypass the executor step limit. */
++	"\ndisable_classes=InfiniteIterator"
++;
++
++static int startup(sapi_module_struct *sapi_module)
++{
++	if (php_module_startup(sapi_module, NULL, 0)==FAILURE) {
++		return FAILURE;
++	}
++	return SUCCESS;
++}
++
++static size_t ub_write(const char *str, size_t str_length)
++{
++	/* quiet */
++	return str_length;
++}
++
++static void fuzzer_flush(void *server_context)
++{
++	/* quiet */
++}
++
++static void send_header(sapi_header_struct *sapi_header, void *server_context)
++{
++}
++
++static char* read_cookies()
++{
++	/* TODO: fuzz these! */
++	return NULL;
++}
++
++static void register_variables(zval *track_vars_array)
++{
++	php_import_environment_variables(track_vars_array);
++}
++
++static void log_message(char *message, int level)
++{
++}
++
++
++static sapi_module_struct fuzzer_module = {
++	"fuzzer",               /* name */
++	"clang fuzzer", /* pretty name */
++
++	startup,             /* startup */
++	php_module_shutdown_wrapper,   /* shutdown */
++
++	NULL,                          /* activate */
++	NULL,                          /* deactivate */
++
++	ub_write,            /* unbuffered write */
++	fuzzer_flush,               /* flush */
++	NULL,                          /* get uid */
++	NULL,                          /* getenv */
++
++	php_error,                     /* error handler */
++
++	NULL,                          /* header handler */
++	NULL,                          /* send headers handler */
++	send_header,         /* send header handler */
++
++	NULL,                          /* read POST data */
++	read_cookies,        /* read Cookies */
++
++	register_variables,  /* register server variables */
++	log_message,         /* Log message */
++	NULL,                          /* Get request time */
++	NULL,                          /* Child terminate */
++
++	STANDARD_SAPI_MODULE_PROPERTIES
++};
++
++int fuzzer_init_php()
++{
++#ifdef __SANITIZE_ADDRESS__
++	/* We're going to leak all the memory allocated during startup,
++	 * so disable lsan temporarily. */
++	__lsan_disable();
++#endif
++
++	sapi_startup(&fuzzer_module);
++	fuzzer_module.phpinfo_as_text = 1;
++
++	fuzzer_module.ini_entries = malloc(sizeof(HARDCODED_INI));
++	memcpy(fuzzer_module.ini_entries, HARDCODED_INI, sizeof(HARDCODED_INI));
++
++	/*
++	 * TODO: we might want to test both Zend and malloc MM, but testing with malloc
++	 * is more likely to find bugs, so use that for now.
++	 */
++	putenv("USE_ZEND_ALLOC=0");
++
++	if (fuzzer_module.startup(&fuzzer_module)==FAILURE) {
++		return FAILURE;
++	}
++
++#ifdef __SANITIZE_ADDRESS__
++	__lsan_enable();
++#endif
++
++	return SUCCESS;
++}
++
++int fuzzer_request_startup()
++{
++	if (php_request_startup() == FAILURE) {
++		php_module_shutdown();
++		return FAILURE;
++	}
++
++#ifdef ZEND_SIGNALS
++	/* Some signal handlers will be overridden,
++	 * don't complain about them during shutdown. */
++	SIGG(check) = 0;
++#endif
++
++	return SUCCESS;
++}
++
++void fuzzer_request_shutdown()
++{
++	zend_try {
++		/* Destroy thrown exceptions. This does not happen as part of request shutdown. */
++		if (EG(exception)) {
++			zend_object_release(EG(exception));
++			EG(exception) = NULL;
++		}
++
++		/* Some fuzzers (like unserialize) may create circular structures. Make sure we free them.
++		 * Two calls are performed to handle objects with destructors. */
++		zend_gc_collect_cycles();
++		zend_gc_collect_cycles();
++	} zend_end_try();
++
++	php_request_shutdown(NULL);
++}
++
++/* Set up a dummy stack frame so that exceptions may be thrown. */
++void fuzzer_setup_dummy_frame()
++{
++	static zend_execute_data execute_data;
++	static zend_function func;
++
++	memset(&execute_data, 0, sizeof(zend_execute_data));
++	memset(&func, 0, sizeof(zend_function));
++
++	func.type = ZEND_INTERNAL_FUNCTION;
++	func.common.function_name = ZSTR_EMPTY_ALLOC();
++	execute_data.func = &func;
++	EG(current_execute_data) = &execute_data;
++}
++
++void fuzzer_set_ini_file(const char *file)
++{
++	if (fuzzer_module.php_ini_path_override) {
++		free(fuzzer_module.php_ini_path_override);
++	}
++	fuzzer_module.php_ini_path_override = strdup(file);
++}
++
++
++int fuzzer_shutdown_php(void)
++{
++	php_module_shutdown();
++	sapi_shutdown();
++
++	free(fuzzer_module.ini_entries);
++	return SUCCESS;
++}
++
++
++// Call named PHP function with N zval arguments
++void fuzzer_call_php_func_zval(const char *func_name, int nargs, zval *args) {
++	zval retval, func;
++
++	ZVAL_STRING(&func, func_name);
++	ZVAL_UNDEF(&retval);
++	call_user_function(CG(function_table), NULL, &func, &retval, nargs, args);
++
++	// TODO: check result?
++	/* to ensure retval is not broken */
++	php_var_dump(&retval, 0);
++
++	/* cleanup */
++	zval_ptr_dtor(&retval);
++	zval_ptr_dtor(&func);
++}
++
++// Call named PHP function with N string arguments
++void fuzzer_call_php_func(const char *func_name, int nargs, char **params) {
++	zval args[nargs];
++	int i;
++
++	for(i=0;i<nargs;i++) {
++		ZVAL_STRING(&args[i], params[i]);
++	}
++
++	fuzzer_call_php_func_zval(func_name, nargs, args);
++
++	for(i=0;i<nargs;i++) {
++		zval_ptr_dtor(&args[i]);
++		ZVAL_UNDEF(&args[i]);
++	}
++}
+diff --git a/sapi/fuzzer/fuzzer-sapi.h b/sapi/fuzzer/fuzzer-sapi.h
+new file mode 100644
+index 00000000000..076a5714569
+--- /dev/null
++++ b/sapi/fuzzer/fuzzer-sapi.h
+@@ -0,0 +1,25 @@
++/*
++   +----------------------------------------------------------------------+
++   | Copyright (c) The PHP Group                                          |
++   +----------------------------------------------------------------------+
++   | This source file is subject to version 3.01 of the PHP license,      |
++   | that is bundled with this package in the file LICENSE, and is        |
++   | available through the world-wide-web at the following url:           |
++   | https://www.php.net/license/3_01.txt                                 |
++   | If you did not receive a copy of the PHP license and are unable to   |
++   | obtain it through the world-wide-web, please send a note to          |
++   | license@php.net so we can mail you a copy immediately.               |
++   +----------------------------------------------------------------------+
++   | Authors: Johannes Schlüter <johanes@php.net>                         |
++   |          Stanislav Malyshev <stas@php.net>                           |
++   +----------------------------------------------------------------------+
++ */
++
++#include <stdbool.h>
++
++int fuzzer_init_php(void);
++int fuzzer_request_startup(void);
++void fuzzer_request_shutdown(void);
++void fuzzer_setup_dummy_frame(void);
++void fuzzer_call_php_func(const char *func_name, int nargs, char **params);
++void fuzzer_call_php_func_zval(const char *func_name, int nargs, zval *args);
+diff --git a/sapi/fuzzer/fuzzer-unserialize.c b/sapi/fuzzer/fuzzer-unserialize.c
+new file mode 100644
+index 00000000000..e542f42e216
+--- /dev/null
++++ b/sapi/fuzzer/fuzzer-unserialize.c
+@@ -0,0 +1,70 @@
++/*
++   +----------------------------------------------------------------------+
++   | Copyright (c) The PHP Group                                          |
++   +----------------------------------------------------------------------+
++   | This source file is subject to version 3.01 of the PHP license,      |
++   | that is bundled with this package in the file LICENSE, and is        |
++   | available through the world-wide-web at the following url:           |
++   | https://www.php.net/license/3_01.txt                                 |
++   | If you did not receive a copy of the PHP license and are unable to   |
++   | obtain it through the world-wide-web, please send a note to          |
++   | license@php.net so we can mail you a copy immediately.               |
++   +----------------------------------------------------------------------+
++   | Authors: Johannes Schlüter <johanes@php.net>                         |
++   +----------------------------------------------------------------------+
++ */
++
++
++#include "fuzzer.h"
++
++#include "Zend/zend.h"
++#include "main/php_config.h"
++#include "main/php_main.h"
++
++#include <stdio.h>
++#include <stdint.h>
++#include <stdlib.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
++
++#include "fuzzer-sapi.h"
++
++#include "ext/standard/php_var.h"
++
++int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
++	unsigned char *orig_data = malloc(Size+1);
++	memcpy(orig_data, Data, Size);
++	orig_data[Size] = '\0';
++
++	__ROSA_TRACE_START();
++
++	if (fuzzer_request_startup() == FAILURE) {
++		return 0;
++	}
++
++	fuzzer_setup_dummy_frame();
++
++	{
++		const unsigned char *data = orig_data;
++		zval result;
++		ZVAL_UNDEF(&result);
++
++		php_unserialize_data_t var_hash;
++		PHP_VAR_UNSERIALIZE_INIT(var_hash);
++		php_var_unserialize(&result, (const unsigned char **) &data, data + Size, &var_hash);
++		PHP_VAR_UNSERIALIZE_DESTROY(var_hash);
++
++		zval_ptr_dtor(&result);
++	}
++
++	free(orig_data);
++
++	fuzzer_request_shutdown();
++	return 0;
++}
++
++int LLVMFuzzerInitialize(int *argc, char ***argv) {
++	fuzzer_init_php();
++
++	/* fuzzer_shutdown_php(); */
++	return 0;
++}
+diff --git a/sapi/fuzzer/fuzzer.h b/sapi/fuzzer/fuzzer.h
+new file mode 100644
+index 00000000000..387b6fa8b29
+--- /dev/null
++++ b/sapi/fuzzer/fuzzer.h
+@@ -0,0 +1,18 @@
++/*
++   +----------------------------------------------------------------------+
++   | Copyright (c) The PHP Group                                          |
++   +----------------------------------------------------------------------+
++   | This source file is subject to version 3.01 of the PHP license,      |
++   | that is bundled with this package in the file LICENSE, and is        |
++   | available through the world-wide-web at the following url:           |
++   | https://www.php.net/license/3_01.txt                                 |
++   | If you did not receive a copy of the PHP license and are unable to   |
++   | obtain it through the world-wide-web, please send a note to          |
++   | license@php.net so we can mail you a copy immediately.               |
++   +----------------------------------------------------------------------+
++   | Authors: Johannes Schlüter <johanes@php.net>                         |
++   +----------------------------------------------------------------------+
++ */
++
++#include "php_version.h"
++#define FUZZER_VERSION PHP_VERSION

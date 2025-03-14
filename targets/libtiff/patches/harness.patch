@@ -1,0 +1,18 @@
+--- a/contrib/oss-fuzz/tiff_read_rgba_fuzzer.cc
++++ b/contrib/oss-fuzz/tiff_read_rgba_fuzzer.cc
+@@ -27,6 +27,7 @@
+ #include <sstream>
+ #include <tiffio.h>
+ #include <tiffio.hxx>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ /* stolen from tiffiop.h, which is a private header so we can't just include it
+  */
+@@ -46,6 +47,7 @@ extern "C" void handle_error(const char *unused, const char *unused2,
+ 
+ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size)
+ {
++    __ROSA_TRACE_START();
+ #ifndef STANDALONE
+     TIFFSetErrorHandler(handle_error);
+     TIFFSetWarningHandler(handle_error);

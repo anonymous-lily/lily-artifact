@@ -1,0 +1,54 @@
+# Safe releases for libxml2.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "libxml2"
+prefix = "libxml2__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "v2.9.13"
+harness-patch = "magma-harness.patch"
+[[commit-sequences.commits]]
+ref = "v2.9.14"
+name = "v2.9.14-ubuntu"
+harness-patch = "magma-harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "v2.9.14"
+harness-patch = "magma-harness.patch"
+[[commit-sequences.commits]]
+ref = "v2.12.7"
+name = "v2.12.7-ubuntu"
+harness-patch = "magma-harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "v2.9.10"
+harness-patch = "magma-harness.patch"
+[[commit-sequences.commits]]
+ref = "v2.9.14"
+name = "v2.9.14-debian"
+harness-patch = "magma-harness.patch"
+
+# NOTE: this release pair is the exact same as `v2.12.7-ubuntu`.
+# [[commit-sequences]]
+# distro = "Debian"
+# releases = "bookworm (12), trixie (13)"
+# [[commit-sequences.commits]]
+# ref = "v2.9.14"
+# harness-patch = "magma-harness.patch"
+# [[commit-sequences.commits]]
+# ref = "v2.12.7"
+# name = "v2.12.7-debian"
+# harness-patch = "magma-harness.patch"

@@ -1,0 +1,16 @@
+--- a/cpp/tests/fuzzing/pdf_fuzzer.cc
++++ b/cpp/tests/fuzzing/pdf_fuzzer.cc
+@@ -4,11 +4,13 @@
+ #include <poppler-global.h>
+ #include <poppler-page.h>
+ #include <poppler-page-renderer.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ static void dummy_error_function(const std::string &, void *) { }
+ 
+ extern "C" int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size)
+ {
++    __ROSA_TRACE_START();
+     poppler::set_debug_error_function(dummy_error_function, nullptr);
+ 
+     poppler::document *doc = poppler::document::load_from_raw_data((const char *)data, size);

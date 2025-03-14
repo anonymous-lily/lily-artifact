@@ -1,0 +1,46 @@
+diff --git a/plugins/sudoers/check.c b/plugins/sudoers/check.c
+index 978dad2c0..97c01c455 100644
+--- a/plugins/sudoers/check.c
++++ b/plugins/sudoers/check.c
+@@ -75,6 +75,13 @@ check_user(int validated, int mode)
+ 	goto done;
+     }
+ 
++/*
++ * NOTE: for fuzzing, we need to run sudo AS sudo. But at the same time, we
++ * need to hit the password check. In order to do that, we need to disable
++ * this entire piece of code that skips the password check if the user is
++ * already sudo, or if they're not elevating privileges.
++ */
++#if 0
+     /*
+      * Don't prompt for the root passwd or if the user is exempt.
+      * If the user is not changing uid/gid, no need for a password.
+@@ -100,6 +107,7 @@ check_user(int validated, int mode)
+ 	rval = -1;
+ 	goto done;
+     }
++#endif
+ 
+     status = timestamp_status();
+ 
+diff --git a/src/sudo.c b/src/sudo.c
+index c8ec005ba..0dea40eea 100644
+--- a/src/sudo.c
++++ b/src/sudo.c
+@@ -97,6 +97,7 @@
+ #include "sudo_plugin.h"
+ #include "sudo_plugin_int.h"
+ #include <sudo_usage.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ /*
+  * Local variables
+@@ -159,6 +160,7 @@ main(int argc, char *argv[], char *envp[])
+     struct command_details command_details;
+     sigset_t mask;
+     debug_decl(main, SUDO_DEBUG_MAIN)
++    __ROSA_TRACE_START();
+ 
+ #if defined(SUDO_DEVEL) && defined(__OpenBSD__)
+     {

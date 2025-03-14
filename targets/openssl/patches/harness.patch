@@ -1,0 +1,18 @@
+--- a/fuzz/bignum.c
++++ b/fuzz/bignum.c
+@@ -17,5 +17,6 @@
+ #include <openssl/bn.h>
+ #include <openssl/err.h>
+ #include "fuzzer.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ 
+@@ -39,6 +40,8 @@ int FuzzerTestOneInput(const uint8_t *buf, size_t len)
+     BIGNUM *b4;
+     BIGNUM *b5;
+ 
++    __ROSA_TRACE_START();
++
+     b1 = BN_new();
+     b2 = BN_new();
+     b3 = BN_new();

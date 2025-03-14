@@ -1,0 +1,36 @@
+[submodule "targets/php/original"]
+	path = targets/php/original
+	url = https://github.com/php/php-src
+[submodule "targets/sqlite3/original"]
+	path = targets/sqlite3/original
+	url = https://github.com/sqlite/sqlite
+[submodule "targets/libxml2/original"]
+	path = targets/libxml2/original
+	url = https://gitlab.gnome.org/GNOME/libxml2
+[submodule "targets/libsndfile/original"]
+	path = targets/libsndfile/original
+	url = https://github.com/libsndfile/libsndfile
+[submodule "targets/lua/original"]
+	path = targets/lua/original
+	url = https://github.com/lua/lua
+[submodule "targets/poppler/original"]
+	path = targets/poppler/original
+	url = https://gitlab.freedesktop.org/poppler/poppler
+[submodule "targets/libpng/original"]
+	path = targets/libpng/original
+	url = https://github.com/pnggroup/libpng
+[submodule "targets/sudo/original"]
+	path = targets/sudo/original
+	url = https://github.com/sudo-project/sudo
+[submodule "targets/libtiff/original"]
+	path = targets/libtiff/original
+	url = https://gitlab.com/libtiff/libtiff
+[submodule "targets/openssl/original"]
+	path = targets/openssl/original
+	url = https://github.com/openssl/openssl
+[submodule "targets/php-unserialize/original"]
+	path = targets/php-unserialize/original
+	url = https://github.com/php/php-src
+[submodule "targets/proftpd/original"]
+	path = targets/proftpd/original
+	url = https://github.com/proftpd/proftpd

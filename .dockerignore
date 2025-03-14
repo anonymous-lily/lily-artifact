@@ -1,0 +1,8 @@
+/build.sh
+/run.sh
+/Dockerfile
+/IMAGE
+/.dockerignore
+/TODO.md
+/NOTES.md
+/.commits-*

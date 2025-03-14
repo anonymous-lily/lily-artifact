@@ -1,0 +1,129 @@
+# Safe commit sequences for openssl.
+# These commit sequences are generated with `get-representative-commits.py`, and do *not* only
+# include commits affecting C source/header files.
+#
+# Oldest commit: c38bb72797916f2a0ab9906aad29162ca8d53546
+# Source: ./fuzz/bignum.c
+
+
+kind = "commit"
+category = "safe-commits"
+target = "openssl"
+prefix = "openssl__safe-commit"
+
+[[commit-sequences]]
+size = "small"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "9d9dc6ac85"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "696de86f8e"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "2e92af5ea5"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "small"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "8e7984e578"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "cee719c2d8"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "69f6b3ceab"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "small"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "8a74ed5619"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "df6a69a850"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "2e407ea5c6"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "682b6f6747"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "a74b2eda2f"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "639b53ecd8"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "e8a4145968"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "53137462f4"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "e915c3f538"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "bc66144845"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "74a8acbdfb"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "fe1128dc2a"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "8377f26c2e"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "e5a7536eae"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "fb8bdbe3eb"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "542b84881c"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "2984445d3a"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "0cc0164d19"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "fc93335760"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "cae72eefc3"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "5a3bbe1712"
+harness-patch = "harness.patch"

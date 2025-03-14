@@ -1,0 +1,51 @@
+# Safe releases for php.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "php"
+prefix = "php__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "php-8.1.0"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "php-8.3.0"
+harness-patch = "harness-b73b70f097.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "php-8.3.0"
+harness-patch = "harness-b73b70f097.patch"
+[[commit-sequences.commits]]
+ref = "php-8.4.0"
+name = "php-8.4.0-ubuntu"
+harness-patch = "harness-b73b70f097.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "php-7.4.0"
+harness-patch = "harness-3204d7e0d1.patch"
+[[commit-sequences.commits]]
+ref = "php-8.2.0"
+harness-patch = "harness-9b15537e9a.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "php-8.2.0"
+harness-patch = "harness-9b15537e9a.patch"
+[[commit-sequences.commits]]
+ref = "php-8.4.0"
+name = "php-8.4.0-debian"
+harness-patch = "harness-b73b70f097.patch"

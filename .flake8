@@ -1,0 +1,10 @@
+[flake8]
+
+exclude = .git,__pycache__
+filename = *.py
+# Black sets the maximum line length to 88, so we'll use that.
+max-line-length = 88
+extend-ignore =
+    # Ignore the "whitespace before ':'" error as it is not PEP8 compliant.
+    # See https://github.com/psf/black/issues/315.
+    E203

@@ -1,0 +1,51 @@
+# Safe releases for sqlite3.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "sqlite3"
+prefix = "sqlite3__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "version-3.37.2"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "version-3.45.1"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "version-3.45.1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "version-3.46.1"
+name = "version-3.46.1-ubuntu"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "version-3.34.1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "version-3.40.1"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "version-3.40.1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "version-3.46.1"
+name = "version-3.46.1-debian"
+harness-patch = "harness.patch"

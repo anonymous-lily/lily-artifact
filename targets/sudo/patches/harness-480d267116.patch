@@ -1,0 +1,46 @@
+diff --git a/plugins/sudoers/check.c b/plugins/sudoers/check.c
+index fab16971e..297d821bb 100644
+--- a/plugins/sudoers/check.c
++++ b/plugins/sudoers/check.c
+@@ -123,6 +123,13 @@ check_user(int validated, int mode)
+     int rval = -1;
+     debug_decl(check_user, SUDOERS_DEBUG_AUTH)
+ 
++/*
++ * NOTE: for fuzzing, we need to run sudo AS sudo. But at the same time, we
++ * need to hit the password check. In order to do that, we need to disable
++ * this entire piece of code that skips the password check if the user is
++ * already sudo, or if they're not elevating privileges.
++ */
++#if 0
+     /*
+      * Init authentication system regardless of whether we need a password.
+      * Required for proper PAM session support.
+@@ -153,6 +160,7 @@ check_user(int validated, int mode)
+ 	    goto done;
+ 	}
+     }
++#endif
+ 
+     rval = check_user_interactive(validated, mode, auth_pw);
+ 
+diff --git a/src/sudo.c b/src/sudo.c
+index ada1805df..4f6f19c22 100644
+--- a/src/sudo.c
++++ b/src/sudo.c
+@@ -87,6 +87,7 @@
+ #include "sudo.h"
+ #include "sudo_plugin.h"
+ #include "sudo_plugin_int.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ /*
+  * Local variables
+@@ -153,6 +154,7 @@ main(int argc, char *argv[], char *envp[])
+     struct plugin_container *plugin, *next;
+     sigset_t mask;
+     debug_decl(main, SUDO_DEBUG_MAIN)
++    __ROSA_TRACE_START();
+ 
+     /* Make sure fds 0-2 are open and do OS-specific initialization. */
+     fix_fds();

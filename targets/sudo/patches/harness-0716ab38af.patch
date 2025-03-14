@@ -1,0 +1,20 @@
+diff --git a/src/sudo.c b/src/sudo.c
+index 2c8d0be8a..53956b97d 100644
+--- a/src/sudo.c
++++ b/src/sudo.c
+@@ -73,6 +73,7 @@
+ #include "sudo.h"
+ #include "sudo_plugin.h"
+ #include "sudo_plugin_int.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ #ifdef USING_NONUNIX_GROUPS
+ # include "nonunix.h"
+@@ -115,6 +116,7 @@ main(int argc, char *argv[], char *envp[])
+     struct plugin_container *plugin, *next;
+     struct command_details command_details;
+     int ok;
++    __ROSA_TRACE_START();
+ #if defined(SUDO_DEVEL) && defined(__OpenBSD__)
+     extern char *malloc_options;
+     malloc_options = "AFGJPR";

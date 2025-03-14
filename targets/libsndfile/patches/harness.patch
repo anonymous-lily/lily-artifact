@@ -1,0 +1,18 @@
+--- a/ossfuzz/sndfile_fuzzer.cc
++++ b/ossfuzz/sndfile_fuzzer.cc
+@@ -4,6 +4,7 @@
+ #include <sys/types.h>
+ #include <sndfile.h>
+ #include <inttypes.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ #include "sndfile_fuzz_header.h"
+ 
+@@ -13,6 +14,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+    SF_INFO sndfile_info ;
+    SNDFILE *sndfile = NULL ;
+    float* read_buffer = NULL ;
++   __ROSA_TRACE_START();
+ 
+    int err = sf_init_file(data, size, &sndfile, &vio_data, &vio, &sndfile_info) ;
+    if (err)

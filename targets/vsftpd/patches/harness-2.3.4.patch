@@ -1,0 +1,228 @@
+--- a/builddefs.h
++++ b/builddefs.h
+@@ -2,7 +2,6 @@
+ #define VSF_BUILDDEFS_H
+ 
+ #undef VSF_BUILD_TCPWRAPPERS
+-#define VSF_BUILD_PAM
+ #undef VSF_BUILD_SSL
+ 
+ #endif /* VSF_BUILDDEFS_H */
+--- /dev/null
++++ b/harness-read.h
+@@ -0,0 +1,58 @@
++#ifndef __VSFTPD_FUZZING_HARNESS_READ__
++#define __VSFTPD_FUZZING_HARNESS_READ__
++
++
++// Since the code below uses `recv()` with `MSG_PEEK`, we need to emulate peeking in `stdin`. To do
++// this, we will create a "peek buffer" which will store new reads from `stdin`. If we get a `recv()`
++// call with `MSG_PEEK`, we will simply read from that buffer. If not, we will consume whatever is
++// left in the buffer, reading more from `stdin` if needed.
++#define __HARNESS_PEEK_BUFFER_SIZE_MAX (1 << 14)
++ssize_t __HARNESS_READ_RESULT = 0;
++char __HARNESS_PEEK_BUFFER[__HARNESS_PEEK_BUFFER_SIZE_MAX] = { '\0' };
++size_t __HARNESS_PEEK_BUFFER_INDEX = 0;
++size_t __HARNESS_PEEK_BUFFER_OFFSET = 0;
++
++#define recv(sockfd, buf, len, flags) ( \
++    recv(-1, buf, len, flags), \
++    errno = 0, \
++    (flags) & MSG_PEEK ? \
++    ( \
++        memcpy(buf, __HARNESS_PEEK_BUFFER, __HARNESS_PEEK_BUFFER_INDEX), \
++        __HARNESS_READ_RESULT = read( \
++            0, buf + __HARNESS_PEEK_BUFFER_INDEX, len - __HARNESS_PEEK_BUFFER_INDEX \
++        ), \
++        memcpy( \
++            __HARNESS_PEEK_BUFFER + __HARNESS_PEEK_BUFFER_INDEX, \
++            buf + __HARNESS_PEEK_BUFFER_INDEX, \
++            __HARNESS_READ_RESULT \
++        ), \
++        __HARNESS_PEEK_BUFFER_INDEX += __HARNESS_READ_RESULT, \
++        __HARNESS_PEEK_BUFFER_INDEX %= __HARNESS_PEEK_BUFFER_SIZE_MAX, \
++        __HARNESS_PEEK_BUFFER_INDEX \
++    ) : read(0, buf, len) \
++)
++
++#define read(fd, buf, len) (\
++    read(-1, buf, len), \
++    errno = 0, \
++    (fd) <= 2 ? \
++    ( \
++        __HARNESS_PEEK_BUFFER_OFFSET = len <= __HARNESS_PEEK_BUFFER_INDEX ? \
++            len : __HARNESS_PEEK_BUFFER_INDEX, \
++        memcpy(buf, __HARNESS_PEEK_BUFFER, __HARNESS_PEEK_BUFFER_OFFSET), \
++        memmove( \
++            __HARNESS_PEEK_BUFFER, \
++            __HARNESS_PEEK_BUFFER + __HARNESS_PEEK_BUFFER_OFFSET, \
++            __HARNESS_PEEK_BUFFER_SIZE_MAX - __HARNESS_PEEK_BUFFER_OFFSET \
++        ), \
++        __HARNESS_PEEK_BUFFER_INDEX -= __HARNESS_PEEK_BUFFER_OFFSET, \
++        read( \
++            fd, \
++            buf + __HARNESS_PEEK_BUFFER_OFFSET, \
++            len > __HARNESS_PEEK_BUFFER_OFFSET ? len - __HARNESS_PEEK_BUFFER_OFFSET : 0 \
++        ) + __HARNESS_PEEK_BUFFER_OFFSET \
++    ) : read(fd, buf, len) \
++ )
++
++
++#endif  // __VSFTPD_FUZZING_HARNESS_READ__
+--- /dev/null
++++ b/harness.h
+@@ -0,0 +1,108 @@
++#ifndef __VSFTPD_FUZZING_HARNESS__
++#define __VSFTPD_FUZZING_HARNESS__
++
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++
++
++// Stub out all network-related functions.
++#define listen(sockfd, backlog) ( \
++    listen(-1, backlog), \
++    errno = 0, \
++    0 \
++)
++
++#define setsockopt(sockfd, level, optname, optval, optlen) ( \
++    setsockopt(-1, level, optname, optval, optlen), \
++    errno = 0, \
++    0 \
++)
++
++#define socket(domain, type, protocol) ( \
++    socket(-1, type, protocol), \
++    errno = 0, \
++    0 \
++)
++
++#define accept(sockfd, addr, addrlen) ( \
++    accept(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define bind(sockfd, addr, addrlen) ( \
++    bind(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define getpeername(sockfd, addr, addrlen) ( \
++    getpeername(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define getsockname(sockfd, addr, addrlen) ( \
++    getsockname(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define common_sock_stub(sockfd, addr, addrlen) \
++    ( \
++        ((struct sockaddr*)addr) != NULL ? \
++        ( \
++            ((struct sockaddr_in*)addr)->sin_family = AF_INET, \
++            ((struct sockaddr_in*)addr)->sin_addr.s_addr = inet_addr("127.0.0.1"), \
++            ((struct sockaddr_in*)addr)->sin_port = htons(8000), \
++            0 \
++        ) : 0, \
++        0 \
++    )
++
++// Stub out various other functions.
++#define alarm(seconds) ( \
++    alarm(0), \
++    0 \
++)
++
++#define close(fd) \
++    (fd) <= 2 ? ( \
++        close(-1), \
++        errno = 0, \
++        0 \
++    ) : close(fd) \
++
++#define dup2(old, new) \
++    (new) <= 2 ? ( \
++        dup2(old, new + 10), \
++        errno = 0, \
++        new \
++    ) : dup2(old, new) \
++
++#define fcntl(fd, op, ...) ( \
++    fcntl(-1, op), \
++    errno = 0, \
++    0 \
++)
++
++#define fstat(fd, statbuf) \
++    (fd) <= 2 ? ( \
++        fstat(-1, statbuf), \
++        errno = 0, \
++        (statbuf)->st_mode |= S_IFSOCK, \
++        0 \
++    ) : fstat(fd, statbuf)
++
++#define fork() 0
++
++#define nanosleep(duration, rem) ( \
++    nanosleep(0, rem), \
++    0 \
++)
++
++#define write(fd, buf, count) write(1, buf, count)
++
++
++#endif  // __VSFTPD_FUZZING_HARNESS__
+--- a/oneprocess.c
++++ b/oneprocess.c
+@@ -25,6 +25,7 @@
+ #include "sysutil.h"
+ #include "ptracesandbox.h"
+ #include "ftppolicy.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ static void one_process_start(void* p_arg);
+ 
+@@ -62,6 +63,12 @@ vsf_one_process_start(struct vsf_session* p_sess)
+ static void
+ one_process_start(void* p_arg)
+ {
++#ifdef __AFL_HAVE_MANUAL_CONTROL
++    __AFL_INIT();
++#endif  // __AFL_HAVE_MANUAL_CONTROL
++
++  __ROSA_TRACE_START();
++
+   struct vsf_session* p_sess = (struct vsf_session*) p_arg;
+   unsigned int caps = 0;
+   if (tunable_chown_uploads)
+--- a/sysdeputil.c
++++ b/sysdeputil.c
+@@ -225,6 +225,8 @@ static char* s_p_proctitle = 0;
+ static int s_zero_fd = -1;
+ #endif
+ 
++#include "harness.h"
++
+ /* File private functions/variables */
+ static int do_sendfile(const int out_fd, const int in_fd,
+                        unsigned int num_send, filesize_t start_pos);
+--- a/sysutil.c
++++ b/sysutil.c
+@@ -55,6 +55,9 @@
+ #include <utime.h>
+ #include <netdb.h>
+ #include <sys/resource.h>
++#include "harness.h"
++#include "harness-read.h"
++
+ 
+ /* Private variables to this file */
+ /* Current umask() */

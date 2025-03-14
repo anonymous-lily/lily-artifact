@@ -1,0 +1,49 @@
+# Safe releases for libpng.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "libpng"
+prefix = "libpng__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "v1.6.37"
+harness-patch = "harness-v1.6.37.patch"
+[[commit-sequences.commits]]
+ref = "v1.6.43"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "v1.6.43"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v1.6.47"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "v1.6.37"
+harness-patch = "harness-v1.6.37.patch"
+[[commit-sequences.commits]]
+ref = "v1.6.39"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "v1.6.39"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v1.6.48"
+harness-patch = "harness.patch"

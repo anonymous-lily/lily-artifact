@@ -1,0 +1,51 @@
+# Safe releases for libtiff.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "libtiff"
+prefix = "libtiff__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "v4.3.0"
+harness-patch = "harness-23cbc60863.patch"
+[[commit-sequences.commits]]
+ref = "v4.5.1"
+name = "v4.5.1-ubuntu1"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "v4.5.1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v4.5.1"
+name = "v4.5.1-ubuntu2"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "v4.2.0"
+harness-patch = "harness-23cbc60863.patch"
+[[commit-sequences.commits]]
+ref = "v4.5.0"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "v4.5.0"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v4.7.0"
+harness-patch = "harness.patch"

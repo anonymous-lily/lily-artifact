@@ -1,0 +1,18 @@
+--- a/test/ossfuzz.c
++++ b/test/ossfuzz.c
+@@ -4,6 +4,7 @@
+ */
+ #include <stddef.h>
+ #include <stdint.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ #include "sqlite3.h"
+ 
+ /*
+@@ -36,6 +37,7 @@ int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+   uint8_t uSelector;       /* First byte of input data[] */
+   int rc;                  /* Return code from various interfaces */
+   char *zSql;              /* Zero-terminated copy of data[] */
++  __ROSA_TRACE_START();
+ 
+   if( size<3 ) return 0;   /* Early out if unsufficient data */
+ 

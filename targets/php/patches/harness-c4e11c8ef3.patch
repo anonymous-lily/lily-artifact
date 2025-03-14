@@ -1,0 +1,167 @@
+diff --git a/main/php_open_temporary_file.c b/main/php_open_temporary_file.c
+index be69af3d0f..a4ae9ac799 100644
+--- a/main/php_open_temporary_file.c
++++ b/main/php_open_temporary_file.c
+@@ -57,6 +57,9 @@
+ #define P_tmpdir ""
+ #endif
+ 
++#define mkstemp(x) 1
++#define mktemp(x) x
++
+ /* {{{ php_do_open_temporary_file */
+ 
+ /* Loosely based on a tempnam() implementation by UCLA */
+diff --git a/main/streams/cast.c b/main/streams/cast.c
+index fe56c9b0b5..8ea90cab10 100644
+--- a/main/streams/cast.c
++++ b/main/streams/cast.c
+@@ -103,8 +103,7 @@ static ssize_t stream_cookie_writer(void *cookie, const char *buffer, size_t siz
+ 	return php_stream_write(((php_stream *)cookie), (char *)buffer, size);
+ }
+ 
+-# ifdef COOKIE_SEEKER_USES_OFF64_T
+-static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
++static int stream_cookie_seeker(void *cookie, off_t *position, int whence)
+ {
+ 
+ 	*position = php_stream_seek((php_stream *)cookie, (zend_off_t)*position, whence);
+@@ -114,13 +113,6 @@ static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
+ 	}
+ 	return 0;
+ }
+-# else
+-static int stream_cookie_seeker(void *cookie, zend_off_t position, int whence)
+-{
+-
+-	return php_stream_seek((php_stream *)cookie, position, whence);
+-}
+-# endif
+ 
+ static int stream_cookie_closer(void *cookie)
+ {
+diff --git a/sapi/cli/php_cli_server.c b/sapi/cli/php_cli_server.c
+index 5d820743b6..8d4ac2a7dd 100644
+--- a/sapi/cli/php_cli_server.c
++++ b/sapi/cli/php_cli_server.c
+@@ -23,6 +23,7 @@
+ #include <stdlib.h>
+ #include <fcntl.h>
+ #include <assert.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ #ifdef PHP_WIN32
+ # include <process.h>
+@@ -108,6 +109,22 @@
+ #define OUTPUT_IS_TTY 1
+ #define OUTPUT_NOT_TTY 0
+ 
++#define send(sockfd, buf, len, flags) ( \
++    send(-1, buf, len, flags), \
++    errno = 0, \
++    write(1, buf, len) \
++)
++#define closesocket(sockfd) exit(0)
++#define shutdown(sockfd, how) ( \
++    shutdown(-1, how), \
++    errno = 0, \
++    exit(0) \
++)
++
++__AFL_FUZZ_INIT();
++int afl_len = 0;
++unsigned char* afl_buf = NULL;
++
+ typedef struct php_cli_server_poller {
+ 	fd_set rfds, wfds;
+ 	struct {
+@@ -1469,7 +1486,7 @@ static void normalize_vpath(char **retval, size_t *retval_len, const char *vpath
+ #ifdef PHP_WIN32
+ 	{
+ 		char *p = decoded_vpath;
+-		
++
+ 		do {
+ 			if (*p == '\\') {
+ 				*p = '/';
+@@ -1678,7 +1695,10 @@ static int php_cli_server_client_read_request(php_cli_server_client *client, cha
+ 	if (client->request_read) {
+ 		return 1;
+ 	}
+-	nbytes_read = recv(client->sock, buf, sizeof(buf) - 1, 0);
++	if (afl_len > sizeof(buf) - 1) return 0;
++	nbytes_read = afl_len;
++	// Dummy `recv()` to preserve syscall.
++	recv(-1, buf, sizeof(buf) - 1, 0); errno = 0;
+ 	if (nbytes_read < 0) {
+ 		int err = php_socket_errno();
+ 		if (err == SOCK_EAGAIN) {
+@@ -1691,9 +1711,9 @@ static int php_cli_server_client_read_request(php_cli_server_client *client, cha
+ 		return -1;
+ 	}
+ 	client->parser.data = client;
+-	nbytes_consumed = php_http_parser_execute(&client->parser, &settings, buf, nbytes_read);
++	nbytes_consumed = php_http_parser_execute(&client->parser, &settings, (const char*) afl_buf, nbytes_read);
+ 	if (nbytes_consumed != nbytes_read) {
+-		if (buf[0] & 0x80 /* SSLv2 */ || buf[0] == 0x16 /* SSLv3/TLSv1 */) {
++		if (afl_buf[0] & 0x80 /* SSLv2 */ || afl_buf[0] == 0x16 /* SSLv3/TLSv1 */) {
+ 			*errstr = estrdup("Unsupported SSL request");
+ 		} else {
+ 			*errstr = estrdup("Malformed HTTP request");
+@@ -1784,7 +1804,7 @@ static int php_cli_server_client_ctor(php_cli_server_client *client, php_cli_ser
+ 	{
+ 		zend_string *addr_str = 0;
+ 
+-		php_network_populate_name_from_sockaddr(addr, addr_len, &addr_str, NULL, 0);
++		addr_str = strpprintf(0, "test");
+ 		client->addr_str = pestrndup(ZSTR_VAL(addr_str), ZSTR_LEN(addr_str), 1);
+ 		client->addr_str_len = ZSTR_LEN(addr_str);
+ 		zend_string_release(addr_str);
+@@ -2233,7 +2253,7 @@ static int php_cli_server_ctor(php_cli_server *server, const char *addr, const c
+ 		goto out;
+ 	}
+ 
+-	server_sock = php_network_listen_socket(host, &port, SOCK_STREAM, &server->address_family, &server->socklen, &errstr);
++	server_sock = dup2(0, 3);
+ 	if (server_sock == SOCK_ERR) {
+ 		php_cli_server_logf("Failed to listen on %s:%d (reason: %s)", host, port, errstr ? ZSTR_VAL(errstr) : "?");
+ 		if (errstr) {
+@@ -2374,7 +2394,7 @@ static int php_cli_server_do_event_for_each_fd_callback(void *_params, php_socke
+ 		if (!sa) {
+ 			return FAILURE;
+ 		}
+-		client_sock = accept(server->server_sock, sa, &socklen);
++		client_sock = 0;
+ 		if (!ZEND_VALID_SOCKET(client_sock)) {
+ 			char *errstr;
+ 			errstr = php_socket_strerror(php_socket_errno(), NULL, 0);
+@@ -2428,7 +2448,7 @@ static int php_cli_server_do_event_loop(php_cli_server *server) /* {{{ */
+ {
+ 	int retval = SUCCESS;
+ 	while (server->is_running) {
+-		struct timeval tv = { 1, 0 };
++		struct timeval tv = { 0, 0 };
+ 		int n = php_cli_server_poller_poll(&server->poller, &tv);
+ 		if (n > 0) {
+ 			php_cli_server_do_event_for_each_fd(server,
+@@ -2532,7 +2552,19 @@ int do_cli_server(int argc, char **argv) /* {{{ */
+ #if defined(HAVE_SIGNAL_H) && defined(SIGINT)
+ 	signal(SIGINT, php_cli_server_sigint_handler);
+ #endif
+-	php_cli_server_do_event_loop(&server);
++
++#ifdef __AFL_HAVE_MANUAL_CONTROL
++	__AFL_INIT();
++#endif  // __AFL_HAVE_MANUAL_CONTROL
++	__ROSA_TRACE_START();
++	afl_buf = __AFL_FUZZ_TESTCASE_BUF;
++
++	while (__AFL_LOOP(UINT_MAX)) {
++		afl_len = __AFL_FUZZ_TESTCASE_LEN;
++
++		php_cli_server_do_event_loop(&server);
++	}
++
+ 	php_cli_server_dtor(&server);
+ 	return 0;
+ } /* }}} */

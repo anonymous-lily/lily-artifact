@@ -1,0 +1,18 @@
+--- a/ossfuzz/sndfile_fuzzer.cc
++++ b/ossfuzz/sndfile_fuzzer.cc
+@@ -4,6 +4,7 @@
+ #include <sys/types.h>
+ #include <sndfile.h>
+ #include <inttypes.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ typedef struct
+ {
+@@ -101,6 +102,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size)
+   SF_INFO sndfile_info;
+   SNDFILE *sndfile = NULL;
+   float* read_buffer = NULL;
++  __ROSA_TRACE_START();
+ 
+   // Initialize the virtual IO structure.
+   vio.get_filelen = vfget_filelen;

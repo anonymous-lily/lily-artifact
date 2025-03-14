@@ -1,0 +1,74 @@
+diff --git a/dict.c b/dict.c
+index 49e1c6bf..dcab3f02 100644
+--- a/dict.c
++++ b/dict.c
+@@ -951,6 +951,8 @@ static unsigned globalRngState[2];
+ ATTRIBUTE_NO_SANITIZE_INTEGER
+ void
+ xmlInitRandom(void) {
++// NOTE: disable randomization in favor of stability.
++#if 0
+     xmlInitMutex(&xmlRngMutex);
+ 
+     {
+@@ -987,6 +989,7 @@ xmlInitRandom(void) {
+                 HASH_ROL((unsigned) ((size_t) &var & 0xFFFFFFFF), 24);
+ #endif
+     }
++#endif
+ }
+ 
+ /*
+@@ -1022,6 +1025,8 @@ xoroshiro64ss(unsigned *s) {
+  */
+ unsigned
+ xmlGlobalRandom(void) {
++// NOTE: disable randomization in favor of stability.
++#if 0
+     unsigned ret;
+ 
+     xmlMutexLock(&xmlRngMutex);
+@@ -1029,6 +1034,8 @@ xmlGlobalRandom(void) {
+     xmlMutexUnlock(&xmlRngMutex);
+ 
+     return(ret);
++#endif
++    return 0;
+ }
+ 
+ /*
+@@ -1040,10 +1047,14 @@ xmlGlobalRandom(void) {
+  */
+ unsigned
+ xmlRandom(void) {
++// NOTE: disable randomization in favor of stability.
++#if 0
+ #ifdef LIBXML_THREAD_ENABLED
+     return(xoroshiro64ss(xmlGetLocalRngState()));
+ #else
+     return(xmlGlobalRandom());
+ #endif
++#endif
++    return 0;
+ }
+ 
+diff --git a/fuzz/reader.c b/fuzz/reader.c
+index 3ec211da..eac2f1df 100644
+--- a/fuzz/reader.c
++++ b/fuzz/reader.c
+@@ -12,6 +12,7 @@
+ #include <libxml/xmlsave.h>
+ #include "fuzz.h"
+ 
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ #include <string.h>
+ 
+ #if 0
+@@ -116,6 +117,7 @@ LLVMFuzzerTestOneInput(const char *data, size_t size) {
+     size_t totalStringSize = 0;
+     int opts;
+     int oomReport = 0;
++    __ROSA_TRACE_START();
+ 
+     xmlFuzzDataInit(data, size);
+     opts = (int) xmlFuzzReadInt(4);

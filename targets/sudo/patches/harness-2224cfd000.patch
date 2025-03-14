@@ -1,0 +1,77 @@
+diff --git a/plugins/sudoers/check.c b/plugins/sudoers/check.c
+index ea1d89085..9228c7dd7 100644
+--- a/plugins/sudoers/check.c
++++ b/plugins/sudoers/check.c
+@@ -178,6 +178,14 @@ check_user(int validated, int mode)
+     if (sudo_auth_init(closure.auth_pw) == -1)
+ 	goto done;
+ 
++
++/*
++ * NOTE: for fuzzing, we need to run sudo AS sudo. But at the same time, we
++ * need to hit the password check. In order to do that, we need to disable
++ * this entire piece of code that skips the password check if the user is
++ * already sudo, or if they're not elevating privileges.
++ */
++#if 0
+     /*
+      * Don't prompt for the root passwd or if the user is exempt.
+      * If the user is not changing uid/gid, no need for a password.
+@@ -205,6 +213,7 @@ check_user(int validated, int mode)
+ 	    goto done;
+ 	}
+     }
++#endif
+ 
+     ret = check_user_interactive(validated, mode, &closure);
+ 
+diff --git a/src/conversation.c b/src/conversation.c
+index 666ff494d..3b90bf857 100644
+--- a/src/conversation.c
++++ b/src/conversation.c
+@@ -98,8 +98,9 @@ sudo_conversation(int num_msgs, const struct sudo_conv_message msgs[],
+ 		    bool written = false;
+ 		    int ttyfd = -1;
+ 
+-		    if (ISSET(msg->msg_type, SUDO_CONV_PREFER_TTY))
+-			ttyfd = open(_PATH_TTY, O_WRONLY);
++            // NOTE: disable this to avoid uncaptured output.
++		    //if (ISSET(msg->msg_type, SUDO_CONV_PREFER_TTY))
++			//ttyfd = open(_PATH_TTY, O_WRONLY);
+ 		    if (len != 0 && (ttyfd != -1 || isatty(fileno(fp)))) {
+ 			/* Convert nl -> cr nl in case tty is in raw mode. */
+ 			if (msg->msg[len - 1] == '\n') {
+@@ -168,10 +169,13 @@ sudo_conversation_printf(int msg_type, const char *fmt, ...)
+ 
+     sudo_debug_set_active_instance(sudo_debug_instance);
+ 
++    // NOTE: disable this to avoid uncaptured output.
++#if 0
+     if (ISSET(msg_type, SUDO_CONV_PREFER_TTY)) {
+ 	/* Try writing to /dev/tty first. */
+ 	ttyfp = fopen(_PATH_TTY, "w");
+     }
++#endif
+ 
+     switch (msg_type & 0xff) {
+     case SUDO_CONV_ERROR_MSG:
+diff --git a/src/sudo.c b/src/sudo.c
+index 6e2778278..bd85c5b0e 100644
+--- a/src/sudo.c
++++ b/src/sudo.c
+@@ -69,6 +69,7 @@
+ #include "sudo.h"
+ #include "sudo_plugin.h"
+ #include "sudo_plugin_int.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ /*
+  * Local variables
+@@ -143,6 +144,7 @@ main(int argc, char *argv[], char *envp[])
+     struct plugin_container *plugin, *next;
+     sigset_t mask;
+     debug_decl_vars(main, SUDO_DEBUG_MAIN)
++    __ROSA_TRACE_START();
+ 
+     initprogname(argc > 0 ? argv[0] : "sudo");
+ 

@@ -1,0 +1,172 @@
+diff --git a/include/harness.h b/include/harness.h
+new file mode 100644
+index 000000000..fc5128983
+--- /dev/null
++++ b/include/harness.h
+@@ -0,0 +1,109 @@
++#ifndef __PROFTPD_FUZZING_HARNESS__
++#define __PROFTPD_FUZZING_HARNESS__
++
++#include <sys/socket.h>
++#include <netinet/in.h>
++#include <arpa/inet.h>
++
++
++// Stub out all network-related functions.
++#define listen(sockfd, backlog) ( \
++    listen(-1, backlog), \
++    errno = 0, \
++    0 \
++)
++
++#define setsockopt(sockfd, level, optname, optval, optlen) ( \
++    setsockopt(-1, level, optname, optval, optlen), \
++    errno = 0, \
++    0 \
++)
++
++#define socket(domain, type, protocol) ( \
++    socket(-1, type, protocol), \
++    errno = 0, \
++    0 \
++)
++
++#define accept(sockfd, addr, addrlen) ( \
++    accept(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define bind(sockfd, addr, addrlen) ( \
++    bind(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define getpeername(sockfd, addr, addrlen) ( \
++    getpeername(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define getsockname(sockfd, addr, addrlen) ( \
++    getsockname(-1, addr, addrlen), \
++    errno = 0, \
++    common_sock_stub(sockfd, addr, addrlen) \
++)
++
++#define common_sock_stub(sockfd, addr, addrlen) \
++    ( \
++        ((struct sockaddr*)addr) != NULL ? \
++        ( \
++            ((struct sockaddr_in*)addr)->sin_family = AF_INET, \
++            ((struct sockaddr_in*)addr)->sin_addr.s_addr = inet_addr("127.0.0.1"), \
++            ((struct sockaddr_in*)addr)->sin_port = htons(8000), \
++            0 \
++        ) : 0, \
++        0 \
++    )
++
++// Stub out various other functions.
++#define alarm(seconds) ( \
++    alarm(0), \
++    0 \
++)
++
++#define close(fd) \
++    ( \
++        close(-1), \
++        errno = 0, \
++        0 \
++    )
++
++#define dup2(old, new) \
++    ((new) <= 2 ? ( \
++        dup2(old, new + 10), \
++        errno = 0, \
++        0 \
++    ) : dup2(old, new))
++
++#define fcntl(fd, op, ...) ( \
++    fcntl(-1, op), \
++    errno = 0, \
++    0 \
++)
++
++#define fstat(fd, statbuf) \
++    (fd) <= 2 ? ( \
++        fstat(-1, statbuf), \
++        errno = 0, \
++        (statbuf)->st_mode |= S_IFSOCK, \
++        0 \
++    ) : fstat(fd, statbuf)
++
++#define fork() 0
++
++#define nanosleep(duration, rem) ( \
++    nanosleep(0, rem), \
++    0 \
++)
++
++#define write(fd, buf, count) \
++    fd >= 0 ? write(1, buf, count) : write(fd, buf, count)
++
++
++#endif  // __PROFTPD_FUZZING_HARNESS__
+diff --git a/src/inet.c b/src/inet.c
+index 28ca3a675..1a790a74b 100644
+--- a/src/inet.c
++++ b/src/inet.c
+@@ -30,6 +30,7 @@
+ 
+ #include "conf.h"
+ #include "privs.h"
++#include "harness.h"
+ 
+ #if 0
+ #ifdef HAVE_NETINET_IN_SYSTM_H
+@@ -533,7 +534,7 @@ static conn_t *inet_initialize_connection(pool *p, xaset_t *servers, int fd,
+         unblock_signals();
+       }
+       
+-      timer_sleep(1);
++      //timer_sleep(1);
+       
+       if(port != INPORT_ANY && port < 1024) {
+         block_signals();
+@@ -635,7 +636,7 @@ conn_t *inet_create_connection_portrange(pool *p, xaset_t *servers,
+       if(attempt == 3) {
+ 	/* obtain a random index into the port array range
+ 	 */
+-	random_index = (int) ((1.0 * index * rand()) / (RAND_MAX+1.0));
++	random_index = 0; //(int) ((1.0 * index * rand()) / (RAND_MAX+1.0));
+ 
+ 	/* copy the port at that index into the array from which port
+ 	 * numbers will be selected when calling inet_initialize_connection()
+diff --git a/src/main.c b/src/main.c
+index 26be831bd..a191f1296 100644
+--- a/src/main.c
++++ b/src/main.c
+@@ -83,6 +83,8 @@
+ #endif /* HAVE_REGEXP_H */
+ 
+ #include "privs.h"
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
++#include "harness.h"
+ 
+ /* From mod_core.c
+  */
+@@ -1050,6 +1052,13 @@ void cmd_loop(server_rec *server, conn_t *c)
+ 
+   log_pri(LOG_INFO, "FTP session opened.");
+ 
++#ifdef __AFL_HAVE_MANUAL_CONTROL
++  __AFL_INIT();
++#endif
++
++  __ROSA_TRACE_START();
++
++
+   while(1) {
+     if(io_telnet_gets(buf,sizeof(buf)-1,session.c->inf,session.c->outf) == NULL) {
+       if(session.c->inf->xerrno == EINTR)

@@ -1,0 +1,19 @@
+--- a/sapi/fuzzer/fuzzer-unserialize.c
++++ b/sapi/fuzzer/fuzzer-unserialize.c
+@@ -24,6 +24,7 @@
+ #include <stdio.h>
+ #include <stdint.h>
+ #include <stdlib.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ #include "fuzzer-sapi.h"
+ 
+@@ -31,6 +32,8 @@
+ 
+ int LLVMFuzzerTestOneInput(const uint8_t *Data, size_t Size) {
+ 
++	__ROSA_TRACE_START();
++
+ 	if (fuzzer_request_startup() == FAILURE) {
+ 		return 0;
+ 	}

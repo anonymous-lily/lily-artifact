@@ -1,0 +1,129 @@
+# Safe commit sequences for sudo.
+# These commit sequences are generated with `get-representative-commits.py`, and *only* include
+# commits affecting C source/header files.
+#
+# Oldest commit: ea432ba2df01ece565f72816d7f9cc55b57c4953
+# Source: ./plugin/sudoers/check.c
+
+
+kind = "commit"
+category = "safe-code-commits"
+target = "sudo"
+prefix = "sudo__safe-code-commit"
+
+[[commit-sequences]]
+size = "small"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "34a3c84de1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "af4634a1c1"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "e3753309fe"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "small"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "7461dcf9a8"
+harness-patch = "harness-d85056d95f.patch"
+[[commit-sequences.commits]]
+ref = "6d63ed8a92"
+harness-patch = "harness-d85056d95f.patch"
+[[commit-sequences.commits]]
+ref = "578af5af4d"
+harness-patch = "harness-d85056d95f.patch"
+
+[[commit-sequences]]
+size = "small"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "e095069d2a"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "b2a44430b5"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "2f80865e73"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "a152afaeb5"
+harness-patch = "harness-d85056d95f.patch"
+[[commit-sequences.commits]]
+ref = "2152f053b1"
+harness-patch = "harness-d85056d95f.patch"
+[[commit-sequences.commits]]
+ref = "20ff6023aa"
+harness-patch = "harness-d85056d95f.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "59765dd360"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "3940020c94"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "575200e734"
+harness-patch = "harness-cec6b1708a.patch"
+
+[[commit-sequences]]
+size = "medium"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "0ed92e6165"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "e22cc72530"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "d9594cb216"
+harness-patch = "harness-cec6b1708a.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "small"
+[[commit-sequences.commits]]
+ref = "93fc7cf6da"
+harness-patch = "harness-387672583e.patch"
+[[commit-sequences.commits]]
+ref = "59e5e379be"
+harness-patch = "harness-387672583e.patch"
+[[commit-sequences.commits]]
+ref = "0d36ea9325"
+harness-patch = "harness-387672583e.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "medium"
+[[commit-sequences.commits]]
+ref = "29f7967420"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "09a4264372"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "8486976b9e"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+size = "large"
+spread = "large"
+[[commit-sequences.commits]]
+ref = "f561e2cafe"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "e1df9d1dc3"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "8c08f5ef03"
+harness-patch = "harness-cec6b1708a.patch"

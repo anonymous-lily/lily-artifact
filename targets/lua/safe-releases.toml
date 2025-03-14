@@ -1,0 +1,52 @@
+# Safe releases for lua.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+#
+# Ubuntu & Debian ship multiple different versions of Lua. We pick the most recent one, `lua5.4`.
+
+kind = "release"
+category = "safe-releases"
+target = "lua"
+prefix = "lua__safe-release"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "v5.4.4"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v5.4.6"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "v5.4.6"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v5.4.7"
+name = "v5.4.7-ubuntu"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "v5.4.2"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v5.4.4"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "v5.4.4"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "v5.4.7"
+name = "v5.4.7-debian"
+harness-patch = "harness.patch"

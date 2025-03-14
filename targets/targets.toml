@@ -1,0 +1,119 @@
+[libpng]
+program = "libpng-read-fuzzer.cmplog"
+arguments = []
+seeds = "png"
+dictionary = "png.dict"
+input = "libfuzzer"
+mode = "binary"
+
+[libsndfile]
+program = "ossfuzz/sndfile-fuzzer.cmplog"
+arguments = []
+seeds = "sound"
+dictionary = "wav.dict"
+input = "libfuzzer"
+mode = "binary"
+
+[libtiff]
+program = "tiff-read-rgba-fuzzer.cmplog"
+arguments = []
+seeds = "tiff"
+dictionary = "tiff.dict"
+input = "libfuzzer"
+mode = "binary"
+
+[libxml2]
+program = "fuzz/reader.cmplog"
+arguments = []
+seeds = "xml"
+dictionary = "xml.dict"
+input = "libfuzzer"
+mode = "ascii"
+
+[lua]
+program = "fuzz-lua.cmplog"
+arguments = []
+seeds = "lua"
+dictionary = "lua.dict"
+input = "libfuzzer"
+mode = "ascii"
+
+[openssl]
+program = "fuzz/bignum.cmplog"
+arguments = []
+seeds = "openssl-bignum"
+dictionary = "openssl-bignum.dict"
+input = "libfuzzer"
+mode = "binary"
+
+[php-unserialize]
+program = "sapi/fuzzer/php-fuzz-unserialize.cmplog"
+arguments = []
+seeds = "php-unserialize"
+dictionary = "php-unserialize.dict"
+input = "libfuzzer"
+mode = "binary"
+
+[php]
+program = "sapi/cli/php.cmplog"
+arguments = [
+    "-S",
+    "127.0.0.1:8080",
+    "-t",
+    "__TARGET_DIR__/www",
+]
+seeds = "http"
+dictionary = "http.dict"
+input = "stdin"
+mode = "ascii"
+
+[poppler]
+program = "pdf-fuzzer.cmplog"
+arguments = []
+seeds = "pdf"
+dictionary = "pdf.dict"
+input = "libfuzzer"
+mode = "ascii"
+
+[proftpd]
+program = "proftpd.cmplog"
+arguments = [
+    "-n",
+    "-c",
+    "__TARGET_DIR__/proftpd.conf",
+]
+seeds = "ftp"
+dictionary = "ftp.dict"
+input = "stdin"
+mode = "ascii"
+
+[sqlite3]
+program = "sqlite3-fuzz.cmplog"
+arguments = []
+seeds = "sql"
+dictionary = "sql.dict"
+input = "libfuzzer"
+mode = "ascii"
+
+[sudo]
+program = "build/bin/sudo.cmplog"
+arguments = [
+    "--stdin",
+    "--reset-timestamp",
+    "--",
+    "id",
+]
+seeds = "generic"
+dictionary = "sudo.dict"
+input = "stdin"
+mode = "ascii"
+
+[vsftpd]
+program = "vsftpd.cmplog"
+arguments = [
+    "__TARGET_DIR__/vsftpd.conf"
+]
+seeds = "ftp"
+dictionary = "ftp.dict"
+input = "stdin"
+mode = "ascii"

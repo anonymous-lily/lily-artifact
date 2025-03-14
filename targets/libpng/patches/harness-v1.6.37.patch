@@ -1,0 +1,18 @@
+--- a/contrib/oss-fuzz/libpng_read_fuzzer.cc
++++ b/contrib/oss-fuzz/libpng_read_fuzzer.cc
+@@ -18,6 +18,7 @@
+ #include <stddef.h>
+ #include <stdint.h>
+ #include <string.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+
+ #include <vector>
+
+@@ -84,6 +85,7 @@ static const int kPngHeaderSize = 8;
+ // Roughly follows the libpng book example:
+ // http://www.libpng.org/pub/png/book/chapter13.html
+ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
++  __ROSA_TRACE_START();
+   if (size < kPngHeaderSize) {
+     return 0;
+   }

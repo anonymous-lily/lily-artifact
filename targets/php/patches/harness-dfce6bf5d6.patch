@@ -1,0 +1,157 @@
+diff --git a/main/php_open_temporary_file.c b/main/php_open_temporary_file.c
+index 8d5c9e9ee7..9824f68876 100644
+--- a/main/php_open_temporary_file.c
++++ b/main/php_open_temporary_file.c
+@@ -57,6 +57,9 @@
+ #define P_tmpdir ""
+ #endif
+ 
++#define mkstemp(x) 1
++#define mktemp(x) x
++
+ /* {{{ php_do_open_temporary_file */
+ 
+ /* Loosely based on a tempnam() implementation by UCLA */
+diff --git a/main/streams/cast.c b/main/streams/cast.c
+index da56e86679..177633e316 100644
+--- a/main/streams/cast.c
++++ b/main/streams/cast.c
+@@ -101,8 +101,7 @@ static ssize_t stream_cookie_writer(void *cookie, const char *buffer, size_t siz
+ 	return php_stream_write(((php_stream *)cookie), (char *)buffer, size);
+ }
+ 
+-# ifdef COOKIE_SEEKER_USES_OFF64_T
+-static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
++static int stream_cookie_seeker(void *cookie, off_t *position, int whence)
+ {
+ 	TSRMLS_FETCH();
+ 
+@@ -113,14 +112,6 @@ static int stream_cookie_seeker(void *cookie, __off64_t *position, int whence)
+ 	}
+ 	return 0;
+ }
+-# else
+-static int stream_cookie_seeker(void *cookie, off_t position, int whence)
+-{
+-	TSRMLS_FETCH();
+-
+-	return php_stream_seek((php_stream *)cookie, position, whence);
+-}
+-# endif
+ 
+ static int stream_cookie_closer(void *cookie)
+ {
+diff --git a/sapi/cli/php_cli_server.c b/sapi/cli/php_cli_server.c
+index 876c57a34d..7c3fe47d57 100644
+--- a/sapi/cli/php_cli_server.c
++++ b/sapi/cli/php_cli_server.c
+@@ -22,6 +22,7 @@
+ #include <stdio.h>
+ #include <fcntl.h>
+ #include <assert.h>
++#include "/root/rosa/fuzzers/aflpp/rosa-trace.h"
+ 
+ #ifdef PHP_WIN32
+ #include <process.h>
+@@ -107,6 +108,22 @@
+ #define OUTPUT_IS_TTY 1
+ #define OUTPUT_NOT_TTY 0
+ 
++#define send(sockfd, buf, len, flags) ( \
++    send(-1, buf, len, flags), \
++    errno = 0, \
++    write(1, buf, len) \
++)
++#define closesocket(sockfd) exit(0)
++#define shutdown(sockfd, how) ( \
++    shutdown(-1, how), \
++    errno = 0, \
++    exit(0) \
++)
++
++__AFL_FUZZ_INIT();
++int afl_len = 0;
++unsigned char* afl_buf = NULL;
++
+ typedef struct php_cli_server_poller {
+ 	fd_set rfds, wfds;
+ 	struct {
+@@ -1603,7 +1620,10 @@ static int php_cli_server_client_read_request(php_cli_server_client *client, cha
+ 	if (client->request_read) {
+ 		return 1;
+ 	}
+-	nbytes_read = recv(client->sock, buf, sizeof(buf) - 1, 0);
++	if (afl_len > sizeof(buf) - 1) return 0;
++	nbytes_read = afl_len;
++	// Dummy `recv()` to preserve syscall.
++	recv(-1, buf, sizeof(buf) - 1, 0); errno = 0;
+ 	if (nbytes_read < 0) {
+ 		int err = php_socket_errno();
+ 		if (err == SOCK_EAGAIN) {
+@@ -1616,7 +1636,7 @@ static int php_cli_server_client_read_request(php_cli_server_client *client, cha
+ 		return -1;
+ 	}
+ 	client->parser.data = client;
+-	nbytes_consumed = php_http_parser_execute(&client->parser, &settings, buf, nbytes_read);
++	nbytes_consumed = php_http_parser_execute(&client->parser, &settings, (const char*) afl_buf, nbytes_read);
+ 	if (nbytes_consumed != nbytes_read) {
+ 		*errstr = estrdup("Malformed HTTP request");
+ 		return -1;
+@@ -1696,7 +1716,8 @@ static int php_cli_server_client_ctor(php_cli_server_client *client, php_cli_ser
+ 	{
+ 		char *addr_str = 0;
+ 		long addr_str_len = 0;
+-		php_network_populate_name_from_sockaddr(addr, addr_len, &addr_str, &addr_str_len, NULL, 0 TSRMLS_CC);
++		addr_str = strdup("test");
++		addr_str_len = strlen(addr_str);
+ 		client->addr_str = pestrndup(addr_str, addr_str_len, 1);
+ 		client->addr_str_len = addr_str_len;
+ 		efree(addr_str);
+@@ -2113,7 +2134,7 @@ static int php_cli_server_ctor(php_cli_server *server, const char *addr, const c
+ 		goto out;
+ 	}
+ 
+-	server_sock = php_network_listen_socket(host, &port, SOCK_STREAM, &server->address_family, &server->socklen, &errstr TSRMLS_CC);
++	server_sock = dup2(0, 3);
+ 	if (server_sock == SOCK_ERR) {
+ 		php_cli_server_logf("Failed to listen on %s:%d (reason: %s)" TSRMLS_CC, host, port, errstr ? errstr: "?");
+ 		efree(errstr);
+@@ -2251,7 +2272,7 @@ static int php_cli_server_do_event_for_each_fd_callback(void *_params, int fd, i
+ 		if (!sa) {
+ 			return FAILURE;
+ 		}
+-		client_sock = accept(server->server_sock, sa, &socklen);
++		client_sock = 0;
+ 		if (client_sock < 0) {
+ 			char *errstr;
+ 			errstr = php_socket_strerror(php_socket_errno(), NULL, 0);
+@@ -2308,7 +2329,7 @@ static int php_cli_server_do_event_loop(php_cli_server *server TSRMLS_DC) /* {{{
+ {
+ 	int retval = SUCCESS;
+ 	while (server->is_running) {	
+-		static const struct timeval tv = { 1, 0 };
++		static const struct timeval tv = { 0, 0 };
+ 		int n = php_cli_server_poller_poll(&server->poller, &tv);
+ 		if (n > 0) {
+ 			php_cli_server_do_event_for_each_fd(server,
+@@ -2412,7 +2433,19 @@ int do_cli_server(int argc, char **argv TSRMLS_DC) /* {{{ */
+ #if defined(HAVE_SIGNAL_H) && defined(SIGINT)
+ 	signal(SIGINT, php_cli_server_sigint_handler);
+ #endif
+-	php_cli_server_do_event_loop(&server TSRMLS_CC);
++
++#ifdef __AFL_HAVE_MANUAL_CONTROL
++	__AFL_INIT();
++#endif  // __AFL_HAVE_MANUAL_CONTROL
++	__ROSA_TRACE_START();
++	afl_buf = __AFL_FUZZ_TESTCASE_BUF;
++
++	while (__AFL_LOOP(UINT_MAX)) {
++		afl_len = __AFL_FUZZ_TESTCASE_LEN;
++
++		php_cli_server_do_event_loop(&server TSRMLS_CC);
++	}
++
+ 	php_cli_server_dtor(&server TSRMLS_CC);
+ 	return 0;
+ } /* }}} */

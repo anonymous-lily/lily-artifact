@@ -1,0 +1,52 @@
+# Safe releases for sudo.
+# These releases are chosen from https://packages.ubuntu.com and https://packages.debian.org,
+# picking versions from the last 3 releases.
+
+
+kind = "release"
+category = "safe-releases"
+target = "sudo"
+prefix = "sudo__safe-release"
+
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "jammy (22.04LTS), noble (24.04LTS)"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_9"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_15p5"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Ubuntu"
+releases = "noble (24.04LTS), plucky (25.04)"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_15p5"
+harness-patch = "harness.patch"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_16p2"
+name = "SUDO_1_9_16p2-ubuntu"
+harness-patch = "harness.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bullseye (11), bookworm (12)"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_5p2"
+harness-patch = "harness-SUDO_1_9_5p2.patch"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_13p3"
+harness-patch = "harness-cec6b1708a.patch"
+
+[[commit-sequences]]
+distro = "Debian"
+releases = "bookworm (12), trixie (13)"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_13p3"
+harness-patch = "harness-cec6b1708a.patch"
+[[commit-sequences.commits]]
+ref = "SUDO_1_9_16p2"
+name = "SUDO_1_9_16p2-debian"
+harness-patch = "harness.patch"
